@@ -15,7 +15,8 @@ data class Note(
 data class Comment(
     val commentId: Int,   // Идентификатор комментария.
     val noteId: String,
-    val message: String  // Текст комментария.
+    val message: String,  // Текст комментария.
+    val isDeleted: Boolean = false // Флаг -> Комментарий удален или нет
 )
 
 // класс Заметки
@@ -56,8 +57,13 @@ class Notes() {
     // Метод deleteComment
     // Удаляет комментарий к заметке.
     fun deleteComment(commentId: Int) {
-        val comment = comments.find { it.commentId == commentId } ?: throw MyCustomExceptionComment("Комментарий с ID $commentId не найден.")
-        comments.remove(comment)
+        val index = comments.indexOfFirst { it.commentId == commentId }
+        if (index != -1) {
+            val comment = comments[index]
+            comments[index] = comment.copy(isDeleted = true) // Помечаем комментарий как удаленный
+        } else {
+            throw Exception("Комментарий с ID $commentId не найден.")
+        }
     }
 
     // Метод edit
@@ -89,21 +95,27 @@ class Notes() {
     }
 
     // Метод getComments
-    // Возвращает список комментариев к заметке.
+    // Возвращает список комментариев к заметке
     fun getComments(noteId: String): List<Comment> {
-        return comments.filter { it.noteId == noteId }
+        return comments.filter { it.noteId == noteId && !it.isDeleted }  // исключаем удаленные комментарии
     }
 
     // Метод restoreComment
-    // Восстанавливает удалённый комментарий.
-    fun restoreComment(comment: Comment) {
-        comments.add(comment)
+    // Восстанавливает удалённый комментарий по его ID.
+    fun restoreComment(commentId: Int) {
+        val index = comments.indexOfFirst { it.commentId == commentId && it.isDeleted }
+        if (index != -1) {
+            val comment = comments[index]
+            comments[index] = comment.copy(isDeleted = false) // Восстанавливаем комментарий
+        } else {
+            throw Exception("Комментарий с ID $commentId не найден или не удален.")
+        }
     }
 }
 // =====================
 
 fun main() {
-    // Проверка работоспоспособность кода
+    // Проверка работоспособности кода
     // ++++++++++++++++++++++++++++++++++
 
     // Создаем экземпляр класса Notes
@@ -138,7 +150,10 @@ fun main() {
     println(notesClass.getById("1"))
 
     // Удаляем комментарий
-    notesClass.deleteComment(0) // Удаляем первый комментарий
+    val comments = notesClass.getComments("1")
+    if (comments.isNotEmpty()) {
+        notesClass.deleteComment(comments[0].commentId) // Удаляем первый комментарий
+    }
     println("\nКомментарии к заметке 1 после удаления первого комментария:")
     notesClass.getComments("1").forEach { println(it) }
 

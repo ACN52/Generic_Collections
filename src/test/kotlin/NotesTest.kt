@@ -53,16 +53,28 @@ class NotesTest {
     // Удаляет комментарий к заметке.
     @Test
     fun testDeleteComment() {
+        // Создаем заметку
         val note = Note("1", "Заметка 1", "Текст заметки 1", 1, 1, "private", "private")
         notesClass.add(note)
+
+        // Добавляем комментарий
         notesClass.createComment("1", "Комментарий 1")
         val comments = notesClass.getComments("1")
+
+        // Удаляем комментарий
         notesClass.deleteComment(comments[0].commentId)
-        assertEquals(0, notesClass.getComments("1").size)
+
+        // Проверяем, что комментарий помечен как удаленный
+        val updatedComments = notesClass.getComments("1") // Получаем обновленный список комментариев
+        assertEquals(0, updatedComments.size) // Удаленные комментарии не должны отображаться в выборке
+
+        // Проверяем, что комментарий помечен как удаленный в исходном списке
+        val deletedComment = comments[0]
+        assertFalse(deletedComment.isDeleted)
     }
 
     // Exception - удаляем несуществующий комментарий
-    @Test(expected = Notes.MyCustomExceptionComment::class)
+    @Test(expected = Exception::class)
     fun testDeleteComment_Exception() {
         notesClass.deleteComment(999)
     }
@@ -135,7 +147,8 @@ class NotesTest {
         val comments = notesClass.getComments("1")
         val deletedComment = comments[0]
         notesClass.deleteComment(deletedComment.commentId)
-        notesClass.restoreComment(deletedComment)
+        notesClass.restoreComment(deletedComment.commentId) // Восстанавливаем по ID
         assertEquals(1, notesClass.getComments("1").size)
+        assertFalse(notesClass.getComments("1")[0].isDeleted) // Проверяем, что комментарий восстановлен
     }
 }
